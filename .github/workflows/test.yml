@@ -52,7 +52,7 @@ jobs:
         run: |
           docker run -d --name xray-bridge \
             -v $(pwd)/xray-config:/etc/xray \
-            teddysun/xray \
+            teddysun/xray:24.11.30 \
             xray -config /etc/xray/config.json
           
           # صبر کوتاه برای بالا آمدن کانتینر
