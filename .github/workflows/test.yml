@@ -59,7 +59,7 @@ jobs:
           sleep 10
           
           echo "--- Container Logs ---"
-          docker logs xray-bridge
+          docker logs -f xray-bridge
           
           echo "----------------------"
           echo "Bridge started. Keeping alive for 5 hours (18000s)..."
