@@ -56,13 +56,13 @@ jobs:
               "rules": [
                 {
                   "type": "field",
-                  "outboundTag": "block",
-                  "domain": ["full:reverse", "regexp:.*\\\\.internal$"]
+                  "domain": ["full:tunnel.github.internal"],
+                  "outboundTag": "tunnel-to-core"
                 },
                 {
                   "type": "field",
-                  "domain": ["full:tunnel.github.internal"],
-                  "outboundTag": "tunnel-to-core"
+                  "outboundTag": "block",
+                  "domain": ["full:reverse", "regexp:.*\\\\.internal$"]
                 },
                 {
                   "type": "field",
