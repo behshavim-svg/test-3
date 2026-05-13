@@ -40,7 +40,7 @@ jobs:
                   "wsSettings": {"path": "/edge", "headers": { "Host": "${{ secrets.DOMAIN }}" }},
                   "sockopt": { "tcpKeepAliveIdle": 15, "tcpKeepAliveInterval": 5 }
                 },
-                "mux": { "enabled": true, "concurrency": 8 }
+                "mux": { "enabled": false}
               },
               { 
                 "tag": "out-direct", 
