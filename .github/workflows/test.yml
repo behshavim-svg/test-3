@@ -40,6 +40,7 @@ jobs:
               { "tag": "out-direct", "protocol": "freedom" }
             ],
             "routing": {
+              "domainStrategy": "AsIs",
               "rules": [
                 { "type": "field", "domain": ["full:tunnel.github.internal"], "outboundTag": "tunnel-to-core" },
                 { "type": "field", "inboundTag": ["github-bridge"], "outboundTag": "out-direct" }
