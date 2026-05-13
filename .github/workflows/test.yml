@@ -48,6 +48,9 @@ jobs:
           }
           EOF
 
+      - name: Debug Network
+        run: curl -v https://${{ secrets.DOMAIN }}/edge || true
+        
       - name: Run Xray
         run: |
           docker run -d --name xray-bridge \
