@@ -57,7 +57,7 @@ jobs:
                 {
                   "type": "field",
                   "outboundTag": "block",
-                  "domain": ["full:reverse", "regexp:.*\\.internal$"]
+                  "domain": ["full:reverse", "regexp:.*\\\\.internal$"]
                 },
                 {
                   "type": "field",
@@ -74,11 +74,6 @@ jobs:
           }
           EOF
 
-      - name: Debug Network
-        run: |
-          echo "Testing connectivity to ${{ secrets.DOMAIN }}..."
-          curl -I -v -m 10 https://${{ secrets.DOMAIN }}/edge || true
-        
       - name: Run Xray
         run: |
           docker run -d --name xray-bridge \
@@ -90,10 +85,8 @@ jobs:
           sleep 10
           
           echo "--- Real-time Container Logs ---"
-          # نمایش لاگ‌ها در پس‌زمینه برای مانیتورینگ زنده
           docker logs -f xray-bridge &
           
           echo "----------------------"
           echo "Bridge is active. Maintaining connection for 5 hours..."
-          # نگه داشتن جاب برای ۵ ساعت
           sleep 18000
