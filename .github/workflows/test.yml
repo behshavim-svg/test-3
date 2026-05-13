@@ -1,0 +1,58 @@
+name: Deploy test
+
+on:
+  repository_dispatch:
+    types: [start-xray]
+
+jobs:
+  run-bridge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create Config Folder
+        run: mkdir -p ./xray-config
+
+      - name: Write Xray Config
+        run: |
+          cat <<EOF > ./xray-config/config.json
+          {
+            "log": { "loglevel": "info" },
+            "reverse": {
+              "bridges": [{"tag": "github-bridge", "domain": "tunnel.github.internal"}]
+            },
+            "outbounds": [
+              {
+                "tag": "tunnel-to-core",
+                "protocol": "vless",
+                "settings": {
+                  "vnext": [{"address": "${{secrets.DOMAIN}}}git.billding.ir", "port": 443, "users": [{"id": "${{ secrets.UUID }}", "encryption": "none"}]}]
+                },
+                "streamSettings": {
+                  "network": "ws",
+                  "security": "tls",
+                  "tlsSettings": {"allowInsecure": false, "serverName": "${{secrets.DOMAIN}}}"},
+                  "wsSettings": {"path": "/edge", "headers": { "Host": "${{secrets.DOMAIN}}}" }}
+                }
+              },
+              { "tag": "out-direct", "protocol": "freedom" }
+            ],
+            "routing": {
+              "rules": [
+                { "type": "field", "domain": ["full:tunnel.github.internal"], "outboundTag": "tunnel-to-core" },
+                { "type": "field", "inboundTag": ["github-bridge"], "outboundTag": "out-direct" }
+              ]
+            }
+          }
+          EOF
+
+      - name: Run Xray
+        run: |
+          docker run -d --name xray-bridge \
+            -v $(pwd)/xray-config:/etc/xray \
+            teddysun/xray \
+            xray -config /etc/xray/config.json
+          
+          echo "Bridge started. Keeping alive for 5 hours..."
+          sleep 18000
