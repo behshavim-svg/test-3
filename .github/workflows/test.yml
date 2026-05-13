@@ -3,6 +3,7 @@ name: Deploy test
 on:
   repository_dispatch:
     types: [start-xray]
+  workflow_dispatch: # اضافه کردن این بخش برای تست دستی هم مفید است
 
 jobs:
   run-bridge:
@@ -27,13 +28,13 @@ jobs:
                 "tag": "tunnel-to-core",
                 "protocol": "vless",
                 "settings": {
-                  "vnext": [{"address": "${{secrets.DOMAIN}}}git.billding.ir", "port": 443, "users": [{"id": "${{ secrets.UUID }}", "encryption": "none"}]}]
+                  "vnext": [{"address": "${{ secrets.DOMAIN }}", "port": 443, "users": [{"id": "${{ secrets.UUID }}", "encryption": "none"}]}]
                 },
                 "streamSettings": {
                   "network": "ws",
                   "security": "tls",
-                  "tlsSettings": {"allowInsecure": false, "serverName": "${{secrets.DOMAIN}}}"},
-                  "wsSettings": {"path": "/edge", "headers": { "Host": "${{secrets.DOMAIN}}}" }}
+                  "tlsSettings": {"allowInsecure": false, "serverName": "${{ secrets.DOMAIN }}"},
+                  "wsSettings": {"path": "/edge", "headers": { "Host": "${{ secrets.DOMAIN }}" }}
                 }
               },
               { "tag": "out-direct", "protocol": "freedom" }
@@ -54,5 +55,12 @@ jobs:
             teddysun/xray \
             xray -config /etc/xray/config.json
           
-          echo "Bridge started. Keeping alive for 5 hours..."
+          # صبر کوتاه برای بالا آمدن کانتینر
+          sleep 10
+          
+          echo "--- Container Logs ---"
+          docker logs xray-bridge
+          
+          echo "----------------------"
+          echo "Bridge started. Keeping alive for 5 hours (18000s)..."
           sleep 18000
