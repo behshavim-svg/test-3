@@ -19,7 +19,7 @@ jobs:
         run: |
           cat <<EOF > ./xray-config/config.json
           {
-            "log": { "loglevel": "info" },
+            "log": { "loglevel": "debug" },
             "dns": {
               "servers": ["localhost", "1.1.1.1"]
             },
