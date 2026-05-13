@@ -3,7 +3,7 @@ name: Deploy test
 on:
   repository_dispatch:
     types: [start-xray]
-  workflow_dispatch: # اضافه کردن این بخش برای تست دستی هم مفید است
+  workflow_dispatch:
 
 jobs:
   run-bridge:
@@ -20,6 +20,9 @@ jobs:
           cat <<EOF > ./xray-config/config.json
           {
             "log": { "loglevel": "info" },
+            "dns": {
+              "servers": ["1.1.1.1", "8.8.8.8"]
+            },
             "reverse": {
               "bridges": [{"tag": "github-bridge", "domain": "tunnel.github.internal"}]
             },
@@ -34,23 +37,47 @@ jobs:
                   "network": "ws",
                   "security": "tls",
                   "tlsSettings": {"allowInsecure": false, "serverName": "${{ secrets.DOMAIN }}"},
-                  "wsSettings": {"path": "/edge", "headers": { "Host": "${{ secrets.DOMAIN }}" }}
+                  "wsSettings": {"path": "/edge", "headers": { "Host": "${{ secrets.DOMAIN }}" }},
+                  "sockopt": {
+                    "tcpKeepAliveIdle": 30,
+                    "tcpKeepAliveInterval": 5
+                  }
                 }
               },
-              { "tag": "out-direct", "protocol": "freedom" }
+              { 
+                "tag": "out-direct", 
+                "protocol": "freedom",
+                "settings": { "domainStrategy": "UseIP" }
+              },
+              { "tag": "block", "protocol": "blackhole" }
             ],
             "routing": {
               "domainStrategy": "AsIs",
               "rules": [
-                { "type": "field", "domain": ["full:tunnel.github.internal"], "outboundTag": "tunnel-to-core" },
-                { "type": "field", "inboundTag": ["github-bridge"], "outboundTag": "out-direct" }
+                {
+                  "type": "field",
+                  "outboundTag": "block",
+                  "domain": ["full:reverse", "regexp:.*\\.internal$"]
+                },
+                {
+                  "type": "field",
+                  "domain": ["full:tunnel.github.internal"],
+                  "outboundTag": "tunnel-to-core"
+                },
+                {
+                  "type": "field",
+                  "inboundTag": ["github-bridge"],
+                  "outboundTag": "out-direct"
+                }
               ]
             }
           }
           EOF
 
       - name: Debug Network
-        run: curl -v https://${{ secrets.DOMAIN }}/edge || true
+        run: |
+          echo "Testing connectivity to ${{ secrets.DOMAIN }}..."
+          curl -I -v -m 10 https://${{ secrets.DOMAIN }}/edge || true
         
       - name: Run Xray
         run: |
@@ -59,12 +86,14 @@ jobs:
             teddysun/xray:24.11.30 \
             xray -config /etc/xray/config.json
           
-          # صبر کوتاه برای بالا آمدن کانتینر
+          echo "--- Waiting for container to initialize ---"
           sleep 10
           
-          echo "--- Container Logs ---"
-          docker logs -f xray-bridge
+          echo "--- Real-time Container Logs ---"
+          # نمایش لاگ‌ها در پس‌زمینه برای مانیتورینگ زنده
+          docker logs -f xray-bridge &
           
           echo "----------------------"
-          echo "Bridge started. Keeping alive for 5 hours (18000s)..."
+          echo "Bridge is active. Maintaining connection for 5 hours..."
+          # نگه داشتن جاب برای ۵ ساعت
           sleep 18000
