@@ -147,7 +147,20 @@ jobs:
             }
           }
           EOF
-
+          
+      - name: Debug Network Connectivity
+        run: |
+          # Test if the runner can resolve the domain and reach port 443
+          echo "Testing connectivity to domain 1..."
+          curl -I -v -m 10 https://${{ secrets.DOMAIN1 }}/edge || echo "Failed to reach DOMAIN1"
+          
+          echo "Testing connectivity to domain 2..."
+          curl -I -v -m 10 https://${{ secrets.DOMAIN2 }}/edge || echo "Failed to reach DOMAIN2"
+          
+          # Test direct IP ping to see if the server drops ICMP packets
+          echo "Pinging the server IP directly..."
+          ping -c 4 185.97.118.182 || echo "Ping failed"
+          
       - name: Run Xray
         run: |
           docker run -d --name xray-bridge \
