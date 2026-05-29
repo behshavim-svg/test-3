@@ -130,15 +130,6 @@ jobs:
               "rules": [
                 {
                   "type": "field",
-                  "outboundTag": "block",
-                  "domain": [
-                    "full:reverse",
-                    "full:reverse.internal.v2fly.org",
-                    "regexp:.*\\\\.internal$"
-                  ]
-                },
-                {
-                  "type": "field",
                   "domain": [
                     "full:tunnel.cctv.internal"
                   ],
@@ -150,6 +141,15 @@ jobs:
                     "full:tunnel.ai.internal"
                   ],
                   "outboundTag": "tunnel-to-ai"
+                },
+                {
+                  "type": "field",
+                  "outboundTag": "block",
+                  "domain": [
+                    "full:reverse",
+                    "full:reverse.internal.v2fly.org",
+                    "regexp:.*\\\\.internal$" 
+                  ]
                 },
                 {
                   "type": "field",
