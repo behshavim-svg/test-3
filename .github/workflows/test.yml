@@ -17,6 +17,7 @@ jobs:
 
       - name: Write Xray Config
         run: |
+          cat <<EOF > ./xray-config/config.json
           {
             "log": {
               "loglevel": "info"
