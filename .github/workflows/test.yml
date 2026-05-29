@@ -64,11 +64,14 @@ jobs:
                     "headers": {
                       "Host": "${{ secrets.DOMAIN1 }}"
                     }
+                  },
+                  "sockopt": {
+                    "tcpKeepAliveIdle": 15,
+                    "tcpKeepAliveInterval": 5
                   }
                 },
                 "mux": {
-                  "enabled": true,
-                  "concurrency": 8
+                  "enabled": false
                 }
               },
               {
@@ -100,27 +103,40 @@ jobs:
                     "headers": {
                       "Host": "${{ secrets.DOMAIN2 }}"
                     }
+                  },
+                  "sockopt": {
+                    "tcpKeepAliveIdle": 15,
+                    "tcpKeepAliveInterval": 5
                   }
                 },
                 "mux": {
-                  "enabled": true,
-                  "concurrency": 8
+                  "enabled": false
                 }
               },
               {
                 "tag": "out-direct",
                 "protocol": "freedom",
-                "settings": {},
-                "streamSettings": {
-                  "sockopt": {
-                    "tcpKeepAliveIdle": 15,
-                    "tcpKeepAliveInterval": 15
-                  }
+                "settings": {
+                  "domainStrategy": "AsIs"
                 }
+              },
+              {
+                "tag": "block",
+                "protocol": "blackhole"
               }
             ],
             "routing": {
+              "domainStrategy": "AsIs",
               "rules": [
+                {
+                  "type": "field",
+                  "outboundTag": "block",
+                  "domain": [
+                    "full:reverse",
+                    "full:reverse.internal.v2fly.org",
+                    "regexp:.*\\\\.internal$"
+                  ]
+                },
                 {
                   "type": "field",
                   "domain": [
@@ -134,6 +150,15 @@ jobs:
                     "full:tunnel.ai.internal"
                   ],
                   "outboundTag": "tunnel-to-ai"
+                },
+                {
+                  "type": "field",
+                  "inboundTag": [
+                    "bridge-cctv",
+                    "bridge-ai"
+                  ],
+                  "port": 53,
+                  "outboundTag": "out-direct"
                 },
                 {
                   "type": "field",
