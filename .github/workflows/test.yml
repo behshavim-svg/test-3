@@ -17,45 +17,131 @@ jobs:
 
       - name: Write Xray Config
         run: |
-          cat <<EOF > ./xray-config/config.json
           {
-            "log": { "loglevel": "debug" },
-            "dns": {
-              "servers": ["localhost", "1.1.1.1"]
+            "log": {
+              "loglevel": "info"
             },
             "reverse": {
-              "bridges": [{"tag": "github-bridge", "domain": "tunnel.github.internal"}]
+              "bridges": [
+                {
+                  "tag": "bridge-cctv",
+                  "domain": "tunnel.cctv.internal"
+                },
+                {
+                  "tag": "bridge-ai",
+                  "domain": "tunnel.ai.internal"
+                }
+              ]
             },
             "outbounds": [
               {
-                "tag": "tunnel-to-core",
+                "tag": "tunnel-to-cctv",
                 "protocol": "vless",
                 "settings": {
-                  "vnext": [{"address": "${{ secrets.DOMAIN }}", "port": 443, "users": [{"id": "${{ secrets.UUID }}", "encryption": "none"}]}]
+                  "vnext": [
+                    {
+                      "address": "${{ secrets.DOMAIN1 }}",
+                      "port": 443,
+                      "users": [
+                        {
+                          "id": "${{ secrets.UUID1 }}",
+                          "encryption": "none"
+                        }
+                      ]
+                    }
+                  ]
                 },
                 "streamSettings": {
                   "network": "ws",
                   "security": "tls",
-                  "tlsSettings": {"allowInsecure": false, "serverName": "${{ secrets.DOMAIN }}"},
-                  "wsSettings": {"path": "/edge", "headers": { "Host": "${{ secrets.DOMAIN }}" }},
-                  "sockopt": { "tcpKeepAliveIdle": 15, "tcpKeepAliveInterval": 5 }
+                  "tlsSettings": {
+                    "allowInsecure": true,
+                    "serverName": "${{ secrets.DOMAIN1 }}"
+                  },
+                  "wsSettings": {
+                    "path": "/edge",
+                    "headers": {
+                      "Host": "${{ secrets.DOMAIN1 }}"
+                    }
+                  }
                 },
-                "mux": { "enabled": false}
+                "mux": {
+                  "enabled": true,
+                  "concurrency": 8
+                }
               },
-              { 
-                "tag": "out-direct", 
+              {
+                "tag": "tunnel-to-ai",
+                "protocol": "vless",
+                "settings": {
+                  "vnext": [
+                    {
+                      "address": "${{ secrets.DOMAIN2 }}",
+                      "port": 443,
+                      "users": [
+                        {
+                          "id": "${{ secrets.UUID2 }}",
+                          "encryption": "none"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "streamSettings": {
+                  "network": "ws",
+                  "security": "tls",
+                  "tlsSettings": {
+                    "allowInsecure": true,
+                    "serverName": "${{ secrets.DOMAIN2 }}"
+                  },
+                  "wsSettings": {
+                    "path": "/edge",
+                    "headers": {
+                      "Host": "${{ secrets.DOMAIN2 }}"
+                    }
+                  }
+                },
+                "mux": {
+                  "enabled": true,
+                  "concurrency": 8
+                }
+              },
+              {
+                "tag": "out-direct",
                 "protocol": "freedom",
-                "settings": { "domainStrategy": "AsIs" }
-              },
-              { "tag": "block", "protocol": "blackhole" }
+                "settings": {},
+                "streamSettings": {
+                  "sockopt": {
+                    "tcpKeepAliveIdle": 15,
+                    "tcpKeepAliveInterval": 15
+                  }
+                }
+              }
             ],
             "routing": {
-              "domainStrategy": "AsIs",
               "rules": [
-                { "type": "field", "domain": ["full:tunnel.github.internal"], "outboundTag": "tunnel-to-core" },
-                { "type": "field", "outboundTag": "block", "domain": ["full:reverse", "regexp:.*\\\\.internal$"] },
-                { "type": "field", "inboundTag": ["github-bridge"], "port": 53, "outboundTag": "out-direct" },
-                { "type": "field", "inboundTag": ["github-bridge"], "outboundTag": "out-direct" }
+                {
+                  "type": "field",
+                  "domain": [
+                    "full:tunnel.cctv.internal"
+                  ],
+                  "outboundTag": "tunnel-to-cctv"
+                },
+                {
+                  "type": "field",
+                  "domain": [
+                    "full:tunnel.ai.internal"
+                  ],
+                  "outboundTag": "tunnel-to-ai"
+                },
+                {
+                  "type": "field",
+                  "inboundTag": [
+                    "bridge-cctv",
+                    "bridge-ai"
+                  ],
+                  "outboundTag": "out-direct"
+                }
               ]
             }
           }
